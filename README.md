@@ -77,7 +77,10 @@ Then the MCP URL is `https://<your-app>.vercel.app/api/mcp` (or `http://localhos
 with header `Authorization: Bearer <MCP_TOKEN>`.
 
 - **Claude Code**: `claude mcp add --transport http reachout-remote https://<your-app>.vercel.app/api/mcp --header "Authorization: Bearer <MCP_TOKEN>"`
-- **claude.ai**: Settings → Connectors → Add custom connector, paste the URL, and add the same Authorization header.
+- **claude.ai / Claude Desktop**: Settings → Connectors → Add custom connector, and paste the URL with the token in it:
+  `https://<your-app>.vercel.app/api/mcp?token=<MCP_TOKEN>` (the connector form has no header field).
+- Vercel's **Deployment Protection** must be off for production (Settings → Deployment Protection → Vercel
+  Authentication → Disabled, or "Only Preview Deployments"), otherwise every request is redirected to a Vercel login.
 
 ### Deploy to Vercel
 
