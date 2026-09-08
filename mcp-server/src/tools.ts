@@ -353,7 +353,7 @@ export function registerTools(server: McpServer): void {
     {
       title: "Follow-ups due",
       description:
-        "Contacts with status 'messaged', last touch more than 7 days ago, and fewer than 2 touches " +
+        "Contacts with status 'messaged', last touch more than 7 days ago, and outbound sends on fewer than 2 distinct days " +
         "(two-touch maximum). Oldest first.",
       inputSchema: {},
     },

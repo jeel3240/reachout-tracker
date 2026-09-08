@@ -30,7 +30,7 @@ export default async function TodayPage() {
         </Card>
 
         <Card title={`Follow-ups due · ${followups.length}`}>
-          <p className="mb-3 text-xs text-zinc-500">Messaged, no reply in 7+ days, fewer than 2 touches.</p>
+          <p className="mb-3 text-xs text-zinc-500">Messaged, no reply in 7+ days, sent on fewer than 2 distinct days.</p>
           {followups.length ? (
             <ul className="divide-y divide-zinc-100">
               {followups.map((c) => (

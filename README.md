@@ -59,7 +59,7 @@ Tools:
 | `update_contact(contact_id, ...)` | Patch any field. `append_note` adds a dated line without replacing notes. |
 | `log_touch(contact_id, direction, channel, ...)` | Inserts the touch, updates `last_touch_at`, increments `touch_count`. Does not change status. |
 | `update_status(contact_id, status, note)` | Sets status. `soft_no` sets `recontact_after` to today + 6 months. |
-| `get_followups_due()` | `messaged`, last touch older than 7 days, fewer than 2 touches. |
+| `get_followups_due()` | `messaged`, last touch older than 7 days, outbound sends on fewer than 2 distinct days. |
 | `get_recontactable()` | `soft_no` past its `recontact_after` date. |
 | `list_contacts(status?, type?, source?, best_fit?, include_closed?)` | Compact list for overviews. Hides signed / hard_decline / closed / skipped unless `include_closed=true` or a status is given explicitly. |
 
