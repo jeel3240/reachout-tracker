@@ -10,7 +10,8 @@ export async function proxy(request: NextRequest) {
   if (!password) return NextResponse.next();
 
   const { pathname } = request.nextUrl;
-  if (pathname === "/login") return NextResponse.next();
+  // /login is public; /api/mcp uses its own bearer token instead of the cookie.
+  if (pathname === "/login" || pathname.startsWith("/api/mcp")) return NextResponse.next();
 
   const cookie = request.cookies.get(AUTH_COOKIE)?.value;
   if (cookie && cookie === (await sessionToken(password))) return NextResponse.next();

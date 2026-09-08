@@ -65,6 +65,27 @@ Tools:
 
 Typical session: `search_contact` → draft → `log_touch` → `update_status`.
 
+## 2b. Hosted MCP endpoint (for claude.ai, Claude Desktop, or another machine)
+
+The web app also serves the same tools over Streamable HTTP at `/api/mcp`. It is off until `MCP_TOKEN` is set.
+
+```bash
+openssl rand -hex 32          # put the result in web/.env.local as MCP_TOKEN (and in Vercel)
+```
+
+Then the MCP URL is `https://<your-app>.vercel.app/api/mcp` (or `http://localhost:3000/api/mcp` locally),
+with header `Authorization: Bearer <MCP_TOKEN>`.
+
+- **Claude Code**: `claude mcp add --transport http reachout-remote https://<your-app>.vercel.app/api/mcp --header "Authorization: Bearer <MCP_TOKEN>"`
+- **claude.ai**: Settings → Connectors → Add custom connector, paste the URL, and add the same Authorization header.
+
+### Deploy to Vercel
+
+1. Import the GitHub repo. Set **Root Directory** to `web`. Leave "Include files outside the root directory" on
+   (the MCP tools are imported from `mcp-server/`).
+2. Add environment variables: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `APP_PASSWORD`, `MCP_TOKEN`.
+3. Deploy.
+
 ## 3. Web dashboard
 
 ```bash

@@ -4,23 +4,28 @@
   "private": true,
   "type": "module",
   "description": "MCP server that lets Claude Code read and update the outreach tracker in Supabase",
-  "bin": { "reachout-mcp": "dist/index.js" },
   "scripts": {
-    "build": "tsc -p tsconfig.json",
-    "start": "node dist/index.js",
+    "start": "tsx src/index.ts",
     "dev": "tsx src/index.ts",
     "import": "tsx src/import-csv.ts",
-    "typecheck": "tsc -p tsconfig.json --noEmit"
+    "typecheck": "tsc -p tsconfig.json"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.17.0",
     "@supabase/supabase-js": "^2.55.0",
+    "@types/ws": "^8.18.1",
     "dotenv": "^16.4.5",
+    "ws": "^8.21.3",
     "zod": "^3.23.8"
   },
   "devDependencies": {
     "@types/node": "^20",
     "tsx": "^4.19.0",
     "typescript": "^5"
+  },
+  "exports": {
+    ".": "./src/index.ts",
+    "./tools": "./src/tools.ts",
+    "./db": "./src/db.ts"
   }
 }

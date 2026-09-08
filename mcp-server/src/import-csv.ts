@@ -9,7 +9,7 @@
  * Duplicates (same linkedin_url or email) are skipped and reported.
  */
 import fs from "node:fs";
-import { STATUSES, TYPES, db, fail, findDuplicate, findOrCreateCompany, normalizeDomain } from "./db.js";
+import { STATUSES, TYPES, db, fail, findDuplicate, findOrCreateCompany, normalizeDomain } from "./db";
 
 // ---------------------------------------------------------------------------
 // tiny RFC-4180 CSV parser (handles quotes, embedded commas and newlines)

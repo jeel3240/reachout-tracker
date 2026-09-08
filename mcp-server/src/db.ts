@@ -1,4 +1,5 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import ws from "ws";
 import dotenv from "dotenv";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
@@ -81,7 +82,11 @@ export function db(): SupabaseClient {
       "SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be set (mcp-server/.env or the MCP config env block)."
     );
   }
-  client = createClient(url, key, { auth: { persistSession: false } });
+  client = createClient(url, key, {
+    auth: { persistSession: false },
+    // supabase-js needs a WebSocket implementation on Node < 22 even though we never use realtime.
+    realtime: { transport: ws as unknown as typeof WebSocket },
+  });
   return client;
 }
 
