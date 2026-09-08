@@ -1,6 +1,6 @@
 import "server-only";
 import { db } from "./supabase";
-import type { Company, Contact, ContactDetail, ContactWithCompany, Status } from "./types";
+import { CLOSED_STATUSES, type Company, type Contact, type ContactDetail, type ContactWithCompany, type Status } from "./types";
 
 function check<T>(r: { data: T | null; error: { message: string } | null }, ctx: string): T {
   if (r.error) throw new Error(`${ctx}: ${r.error.message}`);
@@ -13,17 +13,24 @@ export async function listContacts(opts: {
   q?: string;
   status?: Status | "";
   type?: string;
+  source?: string;
   bestFit?: boolean;
+  includeClosed?: boolean;
 } = {}): Promise<ContactWithCompany[]> {
+  const hideClosed = !opts.status && !opts.includeClosed;
   if (opts.q?.trim()) {
     const rows = check(await (await db()).rpc("search_contacts", { q: opts.q.trim(), max_results: 50 }), "search") as ContactDetail[];
     return rows
       .map((d) => ({ ...d.contact, company: d.company ? { id: d.company.id, name: d.company.name, domain: d.company.domain } : null }))
-      .filter((c) => (!opts.status || c.status === opts.status) && (!opts.type || c.type === opts.type) && (!opts.bestFit || c.best_fit));
+      .filter((c) => (!opts.status || c.status === opts.status) && (!opts.type || c.type === opts.type)
+        && (!opts.source || c.source === opts.source) && (!opts.bestFit || c.best_fit)
+        && (!hideClosed || !CLOSED_STATUSES.includes(c.status)));
   }
   let q = (await db()).from("contacts").select(CONTACT_WITH_COMPANY).order("updated_at", { ascending: false }).limit(500);
   if (opts.status) q = q.eq("status", opts.status);
+  else if (hideClosed) q = q.not("status", "in", `(${CLOSED_STATUSES.join(",")})`);
   if (opts.type) q = q.eq("type", opts.type);
+  if (opts.source) q = q.eq("source", opts.source);
   if (opts.bestFit) q = q.eq("best_fit", true);
   return check(await q, "listContacts") as ContactWithCompany[];
 }

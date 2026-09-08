@@ -5,11 +5,23 @@ export const STATUSES = [
 export const TYPES = ["client", "hiring", "network", "recruiter"] as const;
 export const DIRECTIONS = ["outbound", "inbound"] as const;
 export const CHANNELS = ["email", "linkedin", "call", "meeting"] as const;
+export const SOURCES = ["cold_email", "linkedin", "referral", "cc_surfaced", "inbound"] as const;
+/** No longer pipeline: hidden from the contact list unless "include closed" is ticked. */
+export const CLOSED_STATUSES: readonly Status[] = ["signed", "hard_decline", "closed", "skipped"];
 
 export type Status = (typeof STATUSES)[number];
 export type ContactType = (typeof TYPES)[number];
 export type Direction = (typeof DIRECTIONS)[number];
 export type Channel = (typeof CHANNELS)[number];
+export type Source = (typeof SOURCES)[number];
+
+export const SOURCE_LABEL: Record<Source, string> = {
+  cold_email: "Cold email",
+  linkedin: "LinkedIn",
+  referral: "Referral",
+  cc_surfaced: "CC surfaced",
+  inbound: "Inbound",
+};
 
 export const STATUS_LABEL: Record<Status, string> = {
   requested: "Requested",
@@ -58,6 +70,7 @@ export interface Contact {
   phone: string | null;
   title: string | null;
   type: ContactType | null;
+  source: Source | null;
   status: Status;
   date_requested: string | null;
   date_accepted: string | null;

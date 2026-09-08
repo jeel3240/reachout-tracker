@@ -1,16 +1,18 @@
 import { ContactTable } from "@/components/ContactTable";
 import { inputCls } from "@/components/ui";
 import { listContacts } from "@/lib/queries";
-import { STATUSES, STATUS_LABEL, TYPES, type Status } from "@/lib/types";
+import { SOURCES, SOURCE_LABEL, STATUSES, STATUS_LABEL, TYPES, type Status } from "@/lib/types";
 
-type Search = { q?: string; status?: string; type?: string; best_fit?: string };
+type Search = { q?: string; status?: string; type?: string; source?: string; best_fit?: string; closed?: string };
 
 export default async function ContactsPage({ searchParams }: { searchParams: Promise<Search> }) {
   const sp = await searchParams;
   const status = (STATUSES as readonly string[]).includes(sp.status ?? "") ? (sp.status as Status) : "";
   const type = (TYPES as readonly string[]).includes(sp.type ?? "") ? sp.type! : "";
+  const source = (SOURCES as readonly string[]).includes(sp.source ?? "") ? sp.source! : "";
   const bestFit = sp.best_fit === "1";
-  const contacts = await listContacts({ q: sp.q, status, type, bestFit });
+  const includeClosed = sp.closed === "1";
+  const contacts = await listContacts({ q: sp.q, status, type, source, bestFit, includeClosed });
 
   return (
     <div className="space-y-4">
@@ -26,8 +28,15 @@ export default async function ContactsPage({ searchParams }: { searchParams: Pro
           <option value="">Any type</option>
           {TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
         </select>
+        <select name="source" defaultValue={source} className={`${inputCls} w-auto`}>
+          <option value="">Any source</option>
+          {SOURCES.map((sv) => <option key={sv} value={sv}>{SOURCE_LABEL[sv]}</option>)}
+        </select>
         <label className="inline-flex items-center gap-1.5 text-sm text-zinc-700">
           <input type="checkbox" name="best_fit" value="1" defaultChecked={bestFit} className="h-4 w-4" /> best fit
+        </label>
+        <label className="inline-flex items-center gap-1.5 text-sm text-zinc-700" title="Show signed, hard decline, closed and skipped too">
+          <input type="checkbox" name="closed" value="1" defaultChecked={includeClosed} className="h-4 w-4" /> include closed
         </label>
         <button className="rounded-md border border-zinc-300 bg-white px-3 py-1.5 text-sm font-medium hover:bg-zinc-50">Filter</button>
       </form>

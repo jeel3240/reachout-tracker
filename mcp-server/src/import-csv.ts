@@ -9,7 +9,7 @@
  * Duplicates (same linkedin_url or email) are skipped and reported.
  */
 import fs from "node:fs";
-import { STATUSES, TYPES, db, fail, findDuplicate, findOrCreateCompany, normalizeDomain } from "./db";
+import { SOURCES, STATUSES, TYPES, db, fail, findDuplicate, findOrCreateCompany, normalizeDomain } from "./db";
 
 // ---------------------------------------------------------------------------
 // tiny RFC-4180 CSV parser (handles quotes, embedded commas and newlines)
@@ -43,7 +43,7 @@ const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
 
 type Field =
   | "name" | "first_name" | "last_name" | "email" | "email_verified" | "linkedin_url" | "phone" | "title"
-  | "type" | "status" | "date_requested" | "date_accepted" | "best_fit" | "asu_tie" | "recontact_after" | "notes"
+  | "type" | "source" | "status" | "date_requested" | "date_accepted" | "best_fit" | "asu_tie" | "recontact_after" | "notes"
   | "company" | "domain" | "industry" | "location";
 
 const ALIASES: Record<Field, string[]> = {
@@ -56,6 +56,7 @@ const ALIASES: Record<Field, string[]> = {
   phone: ["phone", "phonenumber", "mobile", "cell", "number"],
   title: ["title", "jobtitle", "role", "position"],
   type: ["type", "contacttype", "category", "segment"],
+  source: ["source", "origin", "channel", "howfound", "foundvia", "via"],
   status: ["status", "stage", "state"],
   date_requested: ["daterequested", "requested", "requestdate", "invitesent", "datesent", "sent", "connectionrequested"],
   date_accepted: ["dateaccepted", "accepted", "acceptdate", "connected", "dateconnected"],
@@ -97,6 +98,14 @@ const TYPE_ALIASES: Record<string, (typeof TYPES)[number]> = {
   hiring: "hiring", employer: "hiring", job: "hiring", hiringmanager: "hiring",
   network: "network", networking: "network", node: "network", peer: "network", connector: "network",
   recruiter: "recruiter", recruiting: "recruiter", staffing: "recruiter", agency: "recruiter",
+};
+
+const SOURCE_ALIASES: Record<string, (typeof SOURCES)[number]> = {
+  coldemail: "cold_email", cold: "cold_email", email: "cold_email",
+  linkedin: "linkedin", li: "linkedin", linkedinsearch: "linkedin",
+  referral: "referral", intro: "referral", introduction: "referral", referred: "referral", warmintro: "referral",
+  ccsurfaced: "cc_surfaced", cc: "cc_surfaced", surfaced: "cc_surfaced", cced: "cc_surfaced",
+  inbound: "inbound", theyreachedout: "inbound", replied: "inbound",
 };
 
 const truthy = (v: string) => ["y", "yes", "true", "1", "x", "✓", "best", "confirmed"].includes(v.trim().toLowerCase());
@@ -161,6 +170,9 @@ async function main() {
     const rawType = norm(get("type"));
     const type = TYPE_ALIASES[rawType] ?? null;
     if (rawType && !type) extras.push(`type: ${get("type")}`);
+    const rawSource = norm(get("source"));
+    const source = SOURCE_ALIASES[rawSource] ?? null;
+    if (rawSource && !source) extras.push(`source: ${get("source")}`);
 
     const notes = [get("notes"), ...extras].filter(Boolean).join("\n") || null;
     const companyName = get("company");
@@ -175,6 +187,7 @@ async function main() {
       phone: get("phone") || null,
       title: get("title") || null,
       type,
+      source,
       status,
       date_requested: toDate(get("date_requested")),
       date_accepted: toDate(get("date_accepted")),

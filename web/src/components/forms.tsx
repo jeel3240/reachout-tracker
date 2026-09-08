@@ -3,7 +3,7 @@
 import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
 import { createContact, updateContact, logTouch, setStatus, updateCompany, login, type ActionState } from "@/app/actions";
-import { CHANNELS, STATUSES, STATUS_HINT, STATUS_LABEL, TYPES, type Company, type Contact } from "@/lib/types";
+import { CHANNELS, SOURCES, SOURCE_LABEL, STATUSES, STATUS_HINT, STATUS_LABEL, TYPES, type Company, type Contact } from "@/lib/types";
 import { inputCls, labelCls } from "./ui";
 
 function Submit({ children }: { children: React.ReactNode }) {
@@ -73,6 +73,12 @@ export function ContactForm({
           <select name="type" defaultValue={c?.type ?? ""} className={inputCls}>
             <option value="">—</option>
             {TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+          </select>
+        </Field>
+        <Field label="Source (where they came from)">
+          <select name="source" defaultValue={c?.source ?? ""} className={inputCls}>
+            <option value="">—</option>
+            {SOURCES.map((sv) => <option key={sv} value={sv}>{SOURCE_LABEL[sv]}</option>)}
           </select>
         </Field>
         {!c && (

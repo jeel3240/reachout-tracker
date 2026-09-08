@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { StatusBadge, Flag, fmtDate, daysAgo } from "./ui";
-import { fullName, type ContactWithCompany } from "@/lib/types";
+import { SOURCE_LABEL, fullName, type ContactWithCompany } from "@/lib/types";
 
 export function ContactTable({ contacts, showCompany = true }: { contacts: ContactWithCompany[]; showCompany?: boolean }) {
   if (!contacts.length) return <p className="py-6 text-center text-sm text-zinc-500">No contacts.</p>;
@@ -12,6 +12,7 @@ export function ContactTable({ contacts, showCompany = true }: { contacts: Conta
             <th className="py-2 pr-3 font-medium">Name</th>
             {showCompany && <th className="py-2 pr-3 font-medium">Company</th>}
             <th className="py-2 pr-3 font-medium">Type</th>
+            <th className="py-2 pr-3 font-medium">Source</th>
             <th className="py-2 pr-3 font-medium">Status</th>
             <th className="py-2 pr-3 font-medium text-right">Touches</th>
             <th className="py-2 pr-3 font-medium">Last touch</th>
@@ -40,6 +41,7 @@ export function ContactTable({ contacts, showCompany = true }: { contacts: Conta
                 </td>
               )}
               <td className="py-2 pr-3 text-zinc-600">{c.type ?? <span className="text-zinc-400">—</span>}</td>
+              <td className="py-2 pr-3 text-zinc-600">{c.source ? SOURCE_LABEL[c.source] : <span className="text-zinc-400">—</span>}</td>
               <td className="py-2 pr-3"><StatusBadge status={c.status} /></td>
               <td className="py-2 pr-3 text-right tabular-nums text-zinc-700">{c.touch_count}</td>
               <td className="py-2 pr-3 text-zinc-600" title={c.last_touch_at ?? ""}>{daysAgo(c.last_touch_at) || <span className="text-zinc-400">never</span>}</td>

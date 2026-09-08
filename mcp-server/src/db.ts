@@ -15,9 +15,13 @@ export const STATUSES = [
 export const TYPES = ["client", "hiring", "network", "recruiter"] as const;
 export const DIRECTIONS = ["outbound", "inbound"] as const;
 export const CHANNELS = ["email", "linkedin", "call", "meeting"] as const;
+export const SOURCES = ["cold_email", "linkedin", "referral", "cc_surfaced", "inbound"] as const;
+/** Statuses that are no longer pipeline: hidden from list_contacts unless include_closed=true. */
+export const CLOSED_STATUSES = ["signed", "hard_decline", "closed", "skipped"] as const;
 
 export type Status = (typeof STATUSES)[number];
 export type ContactType = (typeof TYPES)[number];
+export type Source = (typeof SOURCES)[number];
 
 export interface Company {
   id: string;
@@ -40,6 +44,7 @@ export interface Contact {
   phone: string | null;
   title: string | null;
   type: ContactType | null;
+  source: Source | null;
   status: Status;
   date_requested: string | null;
   date_accepted: string | null;

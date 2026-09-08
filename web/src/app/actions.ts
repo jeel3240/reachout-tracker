@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { db } from "@/lib/supabase";
 import { AUTH_COOKIE, sessionToken } from "@/lib/auth";
-import { CHANNELS, DIRECTIONS, STATUSES, TYPES } from "@/lib/types";
+import { CHANNELS, DIRECTIONS, SOURCES, STATUSES, TYPES } from "@/lib/types";
 
 export type ActionState = { error?: string; ok?: boolean } | undefined;
 
@@ -52,6 +52,7 @@ function contactFields(fd: FormData) {
     phone: str(fd, "phone"),
     title: str(fd, "title"),
     type: oneOf(str(fd, "type"), TYPES),
+    source: oneOf(str(fd, "source"), SOURCES),
     date_requested: str(fd, "date_requested"),
     date_accepted: str(fd, "date_accepted"),
     best_fit: bool(fd, "best_fit"),

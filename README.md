@@ -61,7 +61,7 @@ Tools:
 | `update_status(contact_id, status, note)` | Sets status. `soft_no` sets `recontact_after` to today + 6 months. |
 | `get_followups_due()` | `messaged`, last touch older than 7 days, fewer than 2 touches. |
 | `get_recontactable()` | `soft_no` past its `recontact_after` date. |
-| `list_contacts(status?, type?, best_fit?)` | Compact list for overviews. |
+| `list_contacts(status?, type?, source?, best_fit?, include_closed?)` | Compact list for overviews. Hides signed / hard_decline / closed / skipped unless `include_closed=true` or a status is given explicitly. |
 
 Typical session: `search_contact` → draft → `log_touch` → `update_status`.
 
@@ -133,5 +133,12 @@ Unrecognised status values default to `requested` and are listed at the end so y
 | `closed` | finished, no action |
 | `skipped` | not worth pursuing |
 
-Small defaults added on top of the spec: a new contact gets `date_requested = today`, and the first move
-from `requested` into `accepted`/`messaged`/`replied`/`live`/`signed` sets `date_accepted = today` if empty.
+## Source values
+
+`cold_email`, `linkedin`, `referral`, `cc_surfaced`, `inbound`. Where the person came from; set it on every contact so
+outcomes can be compared by origin as the numbers grow.
+
+Defaults on top of the spec: a new contact with status `requested` gets `date_requested = today`; the first move
+from `requested` into `accepted`/`messaged`/`replied`/`live`/`signed` sets `date_accepted = today` if empty
+(never at insert); any contact entering `soft_no` without a `recontact_after` gets last touch + 6 months.
+HTML entities such as `&amp;` are decoded on every write.

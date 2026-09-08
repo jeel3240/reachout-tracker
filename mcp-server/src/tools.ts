@@ -1,7 +1,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import {
-  CHANNELS, DIRECTIONS, STATUSES, TYPES,
+  CHANNELS, CLOSED_STATUSES, DIRECTIONS, SOURCES, STATUSES, TYPES,
   contactDetail, db, fail, findDuplicate, findOrCreateCompany,
   type Contact, type ContactDetail,
 } from "./db";
@@ -46,6 +46,7 @@ export function registerTools(server: McpServer): void {
       title: c.title,
       company: companyName ?? null,
       type: c.type,
+      source: c.source,
       status: c.status,
       email: c.email,
       email_verified: c.email_verified,
@@ -153,7 +154,8 @@ export function registerTools(server: McpServer): void {
         "Create a contact (and its company if needed). Rejects duplicates: if a contact with the same " +
         "linkedin_url or email already exists, nothing is inserted and the existing record is returned " +
         "with duplicate=true. Default status is 'requested' with date_requested=today, so log people " +
-        "at the moment the LinkedIn invite goes out, not when you first message them.",
+        "at the moment the LinkedIn invite goes out, not when you first message them. date_accepted is never " +
+        "assumed: pass it only if you know it. Always set source.",
       inputSchema: {
         first_name: z.string().min(1),
         last_name: z.string().optional(),
@@ -163,7 +165,8 @@ export function registerTools(server: McpServer): void {
         phone: z.string().optional(),
         title: z.string().optional(),
         type: z.enum(TYPES).optional().describe("client | hiring | network | recruiter"),
-        status: z.enum(STATUSES).optional().describe("Defaults to 'requested'"),
+        source: z.enum(SOURCES).optional().describe("Where they came from: cold_email | linkedin | referral | cc_surfaced | inbound"),
+        status: z.enum(STATUSES).optional().describe("Defaults to 'requested'. soft_no auto-sets recontact_after."),
         date_requested: dateStr.optional(),
         date_accepted: dateStr.optional(),
         best_fit: z.boolean().optional(),
@@ -235,6 +238,7 @@ export function registerTools(server: McpServer): void {
         phone: z.string().nullable().optional(),
         title: z.string().nullable().optional(),
         type: z.enum(TYPES).nullable().optional(),
+        source: z.enum(SOURCES).nullable().optional(),
         date_requested: dateStr.nullable().optional(),
         date_accepted: dateStr.nullable().optional(),
         best_fit: z.boolean().optional(),
@@ -388,15 +392,21 @@ export function registerTools(server: McpServer): void {
     "list_contacts",
     {
       title: "List contacts",
-      description: "List contacts, optionally filtered by status and/or type. Compact rows, newest first.",
+      description:
+        "List contacts, optionally filtered by status, type, source or best_fit. Compact rows, newest first. " +
+        "By default only pipeline contacts are returned: signed, hard_decline, closed and skipped are hidden. " +
+        "Pass include_closed=true to see everyone, or filter by one of those statuses explicitly.",
       inputSchema: {
         status: z.enum(STATUSES).optional(),
         type: z.enum(TYPES).optional(),
+        source: z.enum(SOURCES).optional(),
         best_fit: z.boolean().optional(),
+        include_closed: z.boolean().default(false).optional()
+          .describe("Include signed / hard_decline / closed / skipped. Default false."),
         limit: z.number().int().min(1).max(200).default(50).optional(),
       },
     },
-    async ({ status, type, best_fit, limit }) =>
+    async ({ status, type, source, best_fit, include_closed, limit }) =>
       run(async () => {
         let q = db()
           .from("contacts")
@@ -404,7 +414,9 @@ export function registerTools(server: McpServer): void {
           .order("updated_at", { ascending: false })
           .limit(limit ?? 50);
         if (status) q = q.eq("status", status);
+        else if (!include_closed) q = q.not("status", "in", `(${CLOSED_STATUSES.join(",")})`);
         if (type) q = q.eq("type", type);
+        if (source) q = q.eq("source", source);
         if (best_fit !== undefined) q = q.eq("best_fit", best_fit);
         const { data, error } = await q;
         if (error) fail(error, "list_contacts");
