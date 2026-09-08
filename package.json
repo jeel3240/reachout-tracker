@@ -1,0 +1,11 @@
+{
+  "name": "reachout-tracker",
+  "private": true,
+  "workspaces": ["mcp-server", "web"],
+  "scripts": {
+    "dev": "npm run dev --workspace web",
+    "build": "npm run build --workspaces",
+    "mcp": "npm run start --workspace mcp-server",
+    "import": "npm run import --workspace mcp-server --"
+  }
+}

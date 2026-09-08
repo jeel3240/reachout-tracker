@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "reachout-tracker": {
+      "command": "npx",
+      "args": ["tsx", "mcp-server/src/index.ts"]
+    }
+  }
+}
