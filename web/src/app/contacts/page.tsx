@@ -1,6 +1,6 @@
 import { ContactTable } from "@/components/ContactTable";
 import { inputCls } from "@/components/ui";
-import { listContacts } from "@/lib/queries";
+import { listContactRows } from "@/lib/queries";
 import { SOURCES, SOURCE_LABEL, STATUSES, STATUS_LABEL, TYPES, type Status } from "@/lib/types";
 
 type Search = { q?: string; status?: string; type?: string; source?: string; best_fit?: string; closed?: string };
@@ -12,7 +12,7 @@ export default async function ContactsPage({ searchParams }: { searchParams: Pro
   const source = (SOURCES as readonly string[]).includes(sp.source ?? "") ? sp.source! : "";
   const bestFit = sp.best_fit === "1";
   const includeClosed = sp.closed === "1";
-  const contacts = await listContacts({ q: sp.q, status, type, source, bestFit, includeClosed });
+  const contacts = await listContactRows({ q: sp.q, status, type, source, bestFit, includeClosed });
 
   return (
     <div className="space-y-4">

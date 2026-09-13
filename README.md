@@ -57,13 +57,16 @@ Tools:
 | `get_company(name_or_domain)` | Company plus all contacts under it. Catches the second-person-at-same-company case. |
 | `add_contact(...)` | Creates contact and company. If `linkedin_url` or `email` already exists, inserts nothing and returns the existing record with `duplicate: true`. |
 | `update_contact(contact_id, ...)` | Patch any field. `append_note` adds a dated line without replacing notes. |
-| `log_touch(contact_id, direction, channel, ...)` | Inserts the touch, updates `last_touch_at`, increments `touch_count`. Does not change status. |
+| `log_touch(contact_id, direction, channel, body, status?, created_by?, ...)` | Logs a message. Outbound defaults to `status='drafted'`: not counted until marked sent. Put the full text in `body`. Inbound is always `sent`. |
+| `mark_sent(touch_id, sent_at?)` | Flips a draft to `sent` with the real send time. This is what updates `last_touch_at` and `touch_count`. |
+| `get_pending_sends()` | Every drafted touch grouped by contact, oldest first, with channel, subject, body, who drafted it and when. The daily send list. |
 | `update_status(contact_id, status, note)` | Sets status. `soft_no` sets `recontact_after` to today + 6 months. |
 | `get_followups_due()` | `messaged`, last touch older than 7 days, outbound sends on fewer than 2 distinct days. |
 | `get_recontactable()` | `soft_no` past its `recontact_after` date. |
 | `list_contacts(status?, type?, source?, best_fit?, include_closed?)` | Compact list for overviews. Hides signed / hard_decline / closed / skipped unless `include_closed=true` or a status is given explicitly. |
 
-Typical session: `search_contact` → draft → `log_touch` → `update_status`.
+Typical session: `search_contact` → write → `log_touch` (draft, full body) → you send it → `mark_sent` → `update_status`.
+Daily: `get_pending_sends` to see what still needs to go out.
 
 ## 2b. Hosted MCP endpoint (for claude.ai, Claude Desktop, or another machine)
 
@@ -98,7 +101,9 @@ npm run dev                             # http://localhost:3000
 
 - **Today**: status counts, replied/live contacts needing action, follow-ups due, accepted-but-not-messaged,
   recontactable soft-nos.
-- **Contacts**: search and filter, add, edit, log touches, change status, delete.
+- **Contacts**: search and filter, add, edit, log touches, change status, delete. Each row shows per-channel state
+  derived from touches (`LinkedIn sent 8 Sep`, `Email drafted`); click a row to expand every touch with its full text
+  and a Mark sent button.
 - **Companies**: every contact per company, with a warning when there is more than one.
 
 If `APP_PASSWORD` is set, the site asks for it once and keeps a cookie for 90 days. Leave it unset for
@@ -117,6 +122,12 @@ Headers are matched loosely (Name, First/Last, Company, Website/Domain, Email, L
 Type, Status, Date Requested, Date Accepted, Notes, and so on). Unrecognised columns are appended to notes.
 Unrecognised status values default to `requested` and are listed at the end so you can add aliases in
 `mcp-server/src/import-csv.ts`. Rows whose LinkedIn URL or email already exists are skipped.
+
+## Touch status
+
+Every touch carries `status` (`drafted` or `sent`), `created_by` (who wrote it, default `jeel`) and `body` (the full
+message text). Drafts do not count as touches: `last_touch_at`, `touch_count` and `followups_due` only see `sent`
+touches. Everything logged before 13 Sep 2026 was backfilled to `sent`.
 
 ## Status values
 

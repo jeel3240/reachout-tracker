@@ -1,13 +1,14 @@
 import Link from "next/link";
 import { ContactTable } from "@/components/ContactTable";
 import { Card, Empty, StatusBadge, daysAgo, fmtDate } from "@/components/ui";
-import { getAcceptedNotMessaged, getFollowupsDue, getNeedsAction, getRecontactable, getStatusCounts } from "@/lib/queries";
+import { getAcceptedNotMessaged, getFollowupsDue, getNeedsAction, getRecontactable, getStatusCounts, withTouches } from "@/lib/queries";
 import { STATUSES, fullName, type Status } from "@/lib/types";
 
 export default async function TodayPage() {
-  const [counts, followups, recontact, needsAction, accepted] = await Promise.all([
+  const [counts, followups, recontact, needsActionRaw, acceptedRaw] = await Promise.all([
     getStatusCounts(), getFollowupsDue(), getRecontactable(), getNeedsAction(), getAcceptedNotMessaged(),
   ]);
+  const [needsAction, accepted] = await Promise.all([withTouches(needsActionRaw), withTouches(acceptedRaw)]);
   const total = Object.values(counts).reduce((a, b) => a + b, 0);
 
   return (

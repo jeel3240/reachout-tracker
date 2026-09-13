@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { STATUS_LABEL, type Channel, type Status } from "@/lib/types";
+import { STATUS_LABEL, type Channel, type Status, type TouchStatus } from "@/lib/types";
 
 const STATUS_STYLE: Record<Status, string> = {
   requested: "bg-slate-100 text-slate-700 ring-slate-200",
@@ -31,6 +31,20 @@ export function ChannelTag({ channel }: { channel: Channel }) {
       {channel}
     </span>
   );
+}
+
+export function TouchStatusBadge({ status }: { status: TouchStatus }) {
+  return status === "sent" ? (
+    <span className="rounded bg-emerald-50 px-1.5 py-0.5 text-[11px] font-medium text-emerald-800 ring-1 ring-inset ring-emerald-200">sent</span>
+  ) : (
+    <span className="rounded bg-amber-50 px-1.5 py-0.5 text-[11px] font-medium text-amber-800 ring-1 ring-inset ring-amber-200">draft</span>
+  );
+}
+
+export function fmtShort(d: string | null | undefined) {
+  if (!d) return "";
+  const dt = new Date(d);
+  return isNaN(dt.getTime()) ? d : dt.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
 }
 
 export function Flag({ on, label }: { on: boolean; label: string }) {

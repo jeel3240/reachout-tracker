@@ -1,6 +1,6 @@
 import "server-only";
 import { db } from "./supabase";
-import { CLOSED_STATUSES, type Company, type Contact, type ContactDetail, type ContactWithCompany, type Status } from "./types";
+import { CLOSED_STATUSES, type Company, type Contact, type ContactDetail, type ContactRow, type ContactWithCompany, type Status, type Touch } from "./types";
 
 function check<T>(r: { data: T | null; error: { message: string } | null }, ctx: string): T {
   if (r.error) throw new Error(`${ctx}: ${r.error.message}`);
@@ -85,4 +85,21 @@ export async function getAcceptedNotMessaged(): Promise<ContactWithCompany[]> {
 
 export async function listCompanyOptions(): Promise<Pick<Company, "id" | "name" | "domain">[]> {
   return check(await (await db()).from("companies").select("id, name, domain").order("name"), "companyOptions");
+}
+
+/** Attach every touch (oldest first) to each contact row, in one query. */
+export async function withTouches<T extends Contact>(contacts: T[]): Promise<(T & { touches: Touch[] })[]> {
+  if (!contacts.length) return [];
+  const ids = contacts.map((c) => c.id);
+  const rows = check(
+    await (await db()).from("touches").select("*").in("contact_id", ids).order("created_at", { ascending: true }),
+    "withTouches"
+  ) as Touch[];
+  const by = new Map<string, Touch[]>();
+  for (const t of rows) by.set(t.contact_id, [...(by.get(t.contact_id) ?? []), t]);
+  return contacts.map((c) => ({ ...c, touches: by.get(c.id) ?? [] }));
+}
+
+export async function listContactRows(opts: Parameters<typeof listContacts>[0] = {}): Promise<ContactRow[]> {
+  return withTouches(await listContacts(opts));
 }

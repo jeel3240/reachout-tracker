@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { deleteContact } from "@/app/actions";
-import { ContactForm, StatusForm, TouchForm } from "@/components/forms";
-import { Card, ChannelTag, Flag, StatusBadge, fmtDate, fmtDateTime } from "@/components/ui";
+import { ContactForm, MarkSentButton, StatusForm, TouchForm } from "@/components/forms";
+import { Card, ChannelTag, Flag, StatusBadge, TouchStatusBadge, fmtDate, fmtDateTime } from "@/components/ui";
 import { getContactDetail, listCompanyOptions } from "@/lib/queries";
 import { STATUS_HINT, fullName } from "@/lib/types";
 
@@ -33,7 +33,7 @@ export default async function ContactPage({ params }: { params: Promise<{ id: st
         <dl className="grid grid-cols-2 gap-x-6 gap-y-1 text-xs text-zinc-600 sm:grid-cols-3">
           <dt>Requested</dt><dd className="font-medium text-zinc-800">{fmtDate(c.date_requested) || "—"}</dd>
           <dt>Accepted</dt><dd className="font-medium text-zinc-800">{fmtDate(c.date_accepted) || "—"}</dd>
-          <dt>Touches</dt><dd className="font-medium text-zinc-800">{c.touch_count}</dd>
+          <dt>Sent</dt><dd className="font-medium text-zinc-800">{c.touch_count}{touches.some((t) => t.status === "drafted") && <span className="ml-1 text-amber-700">+{touches.filter((t) => t.status === "drafted").length} draft</span>}</dd>
           <dt>Last touch</dt><dd className="font-medium text-zinc-800">{fmtDateTime(c.last_touch_at) || "never"}</dd>
           {c.recontact_after && (<><dt>Recontact after</dt><dd className="font-medium text-zinc-800">{fmtDate(c.recontact_after)}</dd></>)}
         </dl>
@@ -62,18 +62,21 @@ export default async function ContactPage({ params }: { params: Promise<{ id: st
                 {touches.map((t) => (
                   <li key={t.id} className={`rounded-md border p-3 ${t.direction === "inbound" ? "border-violet-200 bg-violet-50/40" : "border-zinc-200 bg-zinc-50/60"}`}>
                     <div className="flex flex-wrap items-center gap-2 text-xs text-zinc-600">
-                      <span className={`font-medium ${t.direction === "inbound" ? "text-violet-800" : "text-zinc-800"}`}>{t.direction === "inbound" ? "← They wrote" : "→ You sent"}</span>
+                      <span className={`font-medium ${t.direction === "inbound" ? "text-violet-800" : "text-zinc-800"}`}>{t.direction === "inbound" ? "← They wrote" : "→ Outbound"}</span>
                       <ChannelTag channel={t.channel} />
-                      <span>{fmtDateTime(t.sent_at)}</span>
+                      {t.direction === "outbound" && <TouchStatusBadge status={t.status} />}
+                      <span>{t.status === "sent" ? `sent ${fmtDateTime(t.sent_at)}` : `drafted ${fmtDateTime(t.created_at)}`}</span>
+                      <span className="text-zinc-400">by {t.created_by}</span>
+                      {t.status === "drafted" && <span className="ml-auto"><MarkSentButton touch={t} small /></span>}
                     </div>
                     {t.subject && <div className="mt-1 text-sm font-medium text-zinc-900">{t.subject}</div>}
                     {t.hook && <div className="mt-1 text-xs text-zinc-600"><span className="font-medium">Hook:</span> {t.hook}</div>}
-                    {t.body && <pre className="mt-2 whitespace-pre-wrap font-sans text-sm text-zinc-800">{t.body}</pre>}
+                    {t.body && <pre className="mt-2 whitespace-pre-wrap font-sans text-sm text-zinc-800 select-all">{t.body}</pre>}
                   </li>
                 ))}
               </ol>
             ) : (
-              <p className="text-sm text-zinc-500">No touches logged. Nothing has been sent to this person yet.</p>
+              <p className="text-sm text-zinc-500">No touches logged. Nothing has been drafted or sent to this person yet.</p>
             )}
           </Card>
 

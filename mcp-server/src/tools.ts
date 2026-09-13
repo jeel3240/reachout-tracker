@@ -1,7 +1,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import {
-  CHANNELS, CLOSED_STATUSES, DIRECTIONS, SOURCES, STATUSES, TYPES,
+  CHANNELS, CLOSED_STATUSES, DIRECTIONS, SOURCES, STATUSES, TOUCH_STATUSES, TYPES,
   contactDetail, db, fail, findDuplicate, findOrCreateCompany,
   type Contact, type ContactDetail,
 } from "./db";
@@ -65,7 +65,10 @@ export function registerTools(server: McpServer): void {
       company: d.company,
       touches: d.touches.map((t) => ({
         id: t.id,
+        status: t.status,
         sent_at: t.sent_at,
+        drafted_at: t.created_at,
+        created_by: t.created_by,
         direction: t.direction,
         channel: t.channel,
         subject: t.subject,
@@ -76,11 +79,12 @@ export function registerTools(server: McpServer): void {
         status: d.contact.status,
         touch_count: d.contact.touch_count,
         last_touch_at: d.contact.last_touch_at,
-        outbound: d.touches.filter((t) => t.direction === "outbound").length,
+        drafts_pending: d.touches.filter((t) => t.status === "drafted").length,
+        outbound_sent: d.touches.filter((t) => t.direction === "outbound" && t.status === "sent").length,
         inbound: d.touches.filter((t) => t.direction === "inbound").length,
-        channels_used: [...new Set(d.touches.map((t) => t.channel))],
-        messaged_on_linkedin: d.touches.some((t) => t.direction === "outbound" && t.channel === "linkedin"),
-        emailed: d.touches.some((t) => t.direction === "outbound" && t.channel === "email"),
+        channels_used: [...new Set(d.touches.filter((t) => t.status === "sent").map((t) => t.channel))],
+        messaged_on_linkedin: d.touches.some((t) => t.direction === "outbound" && t.channel === "linkedin" && t.status === "sent"),
+        emailed: d.touches.some((t) => t.direction === "outbound" && t.channel === "email" && t.status === "sent"),
       },
     };
   }
@@ -280,37 +284,107 @@ export function registerTools(server: McpServer): void {
     {
       title: "Log a touch",
       description:
-        "Record one message: your outbound send OR their inbound reply. Inserts the touch, sets " +
-        "contacts.last_touch_at and increments touch_count. Store the hook so a follow-up can reference " +
-        "the original angle. Does NOT change status: call update_status afterwards (e.g. accepted -> messaged, " +
-        "messaged -> replied).",
+        "Record one message. Outbound messages are logged as a DRAFT by default (status='drafted'): they do not " +
+        "count as a touch, do not move last_touch_at, and sit in get_pending_sends until mark_sent is called with " +
+        "the real send time. Pass status='sent' only when the message has definitely gone out. Inbound replies are " +
+        "always 'sent'. ALWAYS put the full message text in body so it can be copied when sending. Store the hook " +
+        "so a follow-up can reference the original angle. Does NOT change contact status: call update_status " +
+        "when appropriate (e.g. messaged -> replied after logging an inbound).",
       inputSchema: {
         contact_id: z.string().uuid(),
         direction: z.enum(DIRECTIONS),
         channel: z.enum(CHANNELS),
-        sent_at: z.string().optional().describe("ISO timestamp; defaults to now"),
+        status: z.enum(TOUCH_STATUSES).default("drafted").optional()
+          .describe("drafted (default) or sent. Ignored for inbound, which is always sent."),
+        body: z.string().optional().describe("Full message text. Required in practice: this is what gets copied and sent."),
         subject: z.string().optional().describe("Email subject line"),
         hook: z.string().optional().describe("The angle / opener used"),
-        body: z.string().optional().describe("Full message text"),
+        sent_at: z.string().optional().describe("ISO timestamp. Only meaningful with status='sent' or inbound; defaults to now then."),
+        created_by: z.string().optional().describe("Who wrote it, e.g. 'jeel'. Defaults to 'jeel'."),
       },
     },
-    async ({ contact_id, direction, channel, sent_at, subject, hook, body }) =>
+    async ({ contact_id, direction, channel, status, body, subject, hook, sent_at, created_by }) =>
       run(async () => {
         const { data, error } = await db().rpc("log_touch", {
           p_contact_id: contact_id,
           p_direction: direction,
           p_channel: channel,
-          p_sent_at: sent_at ?? new Date().toISOString(),
+          p_sent_at: sent_at ?? null,
           p_subject: subject ?? null,
           p_hook: hook ?? null,
           p_body: body ?? null,
+          p_status: status ?? "drafted",
+          p_created_by: created_by ?? "jeel",
         });
         if (error) fail(error, "log_touch");
+        const touch = data as { id: string; status: string };
         const detail = await contactDetail(contact_id);
         return json({
           touch: data,
           contact: detail ? summarize(detail.contact, detail.company?.name) : null,
-          reminder: "Update status if this touch changes it (accepted -> messaged, messaged -> replied).",
+          next:
+            touch.status === "drafted"
+              ? `Draft saved. When it has actually been sent, call mark_sent(touch_id="${touch.id}", sent_at=<real time>).`
+              : "Update contact status if this touch changes it (accepted -> messaged, messaged -> replied).",
+        });
+      })
+  );
+
+  // ---------------------------------------------------------------------------
+  // mark_sent
+  // ---------------------------------------------------------------------------
+  server.registerTool(
+    "mark_sent",
+    {
+      title: "Mark a drafted touch as sent",
+      description:
+        "Flip a touch from drafted to sent and record the actual send time. This is what makes it count: " +
+        "contacts.last_touch_at and touch_count update here, not when the draft was written. Calling it on an " +
+        "already-sent touch only corrects sent_at.",
+      inputSchema: {
+        touch_id: z.string().uuid().describe("From log_touch's result or get_pending_sends"),
+        sent_at: z.string().optional().describe("ISO timestamp of the real send; defaults to now"),
+      },
+    },
+    async ({ touch_id, sent_at }) =>
+      run(async () => {
+        const { data, error } = await db().rpc("mark_sent", {
+          p_touch_id: touch_id,
+          p_sent_at: sent_at ?? new Date().toISOString(),
+        });
+        if (error) fail(error, "mark_sent");
+        const touch = data as { contact_id: string };
+        const detail = await contactDetail(touch.contact_id);
+        return json({
+          touch: data,
+          contact: detail ? summarize(detail.contact, detail.company?.name) : null,
+          reminder: "If this was the first message to them, update_status to 'messaged'.",
+        });
+      })
+  );
+
+  // ---------------------------------------------------------------------------
+  // get_pending_sends
+  // ---------------------------------------------------------------------------
+  server.registerTool(
+    "get_pending_sends",
+    {
+      title: "Pending sends (drafts)",
+      description:
+        "Every touch with status='drafted', grouped by contact, oldest draft first. Each entry has channel, " +
+        "subject, body, who drafted it and when. This is the daily 'what do I need to send' list; copy the body " +
+        "from here, then call mark_sent(touch_id, sent_at).",
+      inputSchema: {},
+    },
+    async () =>
+      run(async () => {
+        const { data, error } = await db().rpc("pending_sends");
+        if (error) fail(error, "pending_sends");
+        const groups = (data ?? []) as { contact: unknown; touches: unknown[] }[];
+        return json({
+          contacts: groups.length,
+          drafts: groups.reduce((n, g) => n + g.touches.length, 0),
+          pending: groups,
         });
       })
   );

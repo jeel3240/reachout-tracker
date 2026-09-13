@@ -2,14 +2,14 @@ import { notFound } from "next/navigation";
 import { ContactTable } from "@/components/ContactTable";
 import { CompanyForm } from "@/components/forms";
 import { Card } from "@/components/ui";
-import { getCompany } from "@/lib/queries";
+import { getCompany, withTouches } from "@/lib/queries";
 
 export default async function CompanyPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const data = await getCompany(id);
   if (!data) notFound();
   const { company, contacts } = data;
-  const withCompany = contacts.map((c) => ({ ...c, company: { id: company.id, name: company.name, domain: company.domain } }));
+  const withCompany = await withTouches(contacts.map((c) => ({ ...c, company: { id: company.id, name: company.name, domain: company.domain } })));
 
   return (
     <div className="space-y-6">

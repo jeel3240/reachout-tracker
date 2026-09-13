@@ -15,6 +15,7 @@ export const STATUSES = [
 export const TYPES = ["client", "hiring", "network", "recruiter"] as const;
 export const DIRECTIONS = ["outbound", "inbound"] as const;
 export const CHANNELS = ["email", "linkedin", "call", "meeting"] as const;
+export const TOUCH_STATUSES = ["drafted", "sent"] as const;
 export const SOURCES = ["cold_email", "linkedin", "referral", "cc_surfaced", "inbound"] as const;
 /** Statuses that are no longer pipeline: hidden from list_contacts unless include_closed=true. */
 export const CLOSED_STATUSES = ["signed", "hard_decline", "closed", "skipped"] as const;
@@ -63,7 +64,9 @@ export interface Touch {
   contact_id: string;
   direction: (typeof DIRECTIONS)[number];
   channel: (typeof CHANNELS)[number];
-  sent_at: string;
+  status: (typeof TOUCH_STATUSES)[number];
+  created_by: string;
+  sent_at: string | null;
   subject: string | null;
   hook: string | null;
   body: string | null;

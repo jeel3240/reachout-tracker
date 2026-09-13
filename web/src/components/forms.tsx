@@ -2,8 +2,8 @@
 
 import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
-import { createContact, updateContact, logTouch, setStatus, updateCompany, login, type ActionState } from "@/app/actions";
-import { CHANNELS, SOURCES, SOURCE_LABEL, STATUSES, STATUS_HINT, STATUS_LABEL, TYPES, type Company, type Contact } from "@/lib/types";
+import { createContact, updateContact, logTouch, markSent, setStatus, updateCompany, login, type ActionState } from "@/app/actions";
+import { CHANNELS, SOURCES, SOURCE_LABEL, STATUSES, STATUS_HINT, STATUS_LABEL, TYPES, type Company, type Contact, type Touch } from "@/lib/types";
 import { inputCls, labelCls } from "./ui";
 
 function Submit({ children }: { children: React.ReactNode }) {
@@ -142,7 +142,7 @@ export function TouchForm({ contact }: { contact: Contact }) {
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Field label="Direction">
           <select name="direction" defaultValue="outbound" className={inputCls}>
-            <option value="outbound">outbound (I sent)</option>
+            <option value="outbound">outbound (from us)</option>
             <option value="inbound">inbound (they replied)</option>
           </select>
         </Field>
@@ -151,13 +151,22 @@ export function TouchForm({ contact }: { contact: Contact }) {
             {CHANNELS.map((ch) => <option key={ch} value={ch}>{ch}</option>)}
           </select>
         </Field>
-        <Field label="Sent at" className="col-span-2">
+        <Field label="Status">
+          <select name="status" defaultValue="drafted" className={inputCls}>
+            <option value="drafted">drafted (not sent yet)</option>
+            <option value="sent">sent</option>
+          </select>
+        </Field>
+        <Field label="Written by">
+          <input name="created_by" defaultValue="jeel" className={inputCls} />
+        </Field>
+        <Field label="Sent at (only if status is sent, or inbound)" className="col-span-2 sm:col-span-4">
           <input name="sent_at" type="datetime-local" defaultValue={local} className={inputCls} />
         </Field>
       </div>
       <Field label="Subject (email)"><input name="subject" className={inputCls} /></Field>
       <Field label="Hook / angle"><input name="hook" placeholder="What the message leads with, so a follow-up can reference it" className={inputCls} /></Field>
-      <Field label="Body"><textarea name="body" rows={5} className={inputCls} /></Field>
+      <Field label="Body (full message text, copied from here when sending)"><textarea name="body" rows={6} className={inputCls} /></Field>
       <Field label="Also set status to">
         <select name="new_status" defaultValue={suggested} className={inputCls}>
           <option value="">— leave as {STATUS_LABEL[contact.status]} —</option>
@@ -224,6 +233,19 @@ export function LoginForm({ next }: { next: string }) {
         <Submit>Sign in</Submit>
         <Feedback state={state} />
       </div>
+    </form>
+  );
+}
+
+export function MarkSentButton({ touch, small = false }: { touch: Pick<Touch, "id" | "contact_id">; small?: boolean }) {
+  const [state, action] = useActionState(markSent, undefined);
+  return (
+    <form action={action} className="inline-flex items-center gap-2">
+      <input type="hidden" name="touch_id" value={touch.id} />
+      <input type="hidden" name="contact_id" value={touch.contact_id} />
+      <input name="sent_at" type="datetime-local" className={`${inputCls} w-auto ${small ? "py-0.5 text-xs" : ""}`} />
+      <Submit>Mark sent</Submit>
+      <Feedback state={state} />
     </form>
   );
 }

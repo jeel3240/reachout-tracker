@@ -5,6 +5,8 @@ export const STATUSES = [
 export const TYPES = ["client", "hiring", "network", "recruiter"] as const;
 export const DIRECTIONS = ["outbound", "inbound"] as const;
 export const CHANNELS = ["email", "linkedin", "call", "meeting"] as const;
+export const TOUCH_STATUSES = ["drafted", "sent"] as const;
+export type TouchStatus = (typeof TOUCH_STATUSES)[number];
 export const SOURCES = ["cold_email", "linkedin", "referral", "cc_surfaced", "inbound"] as const;
 /** No longer pipeline: hidden from the contact list unless "include closed" is ticked. */
 export const CLOSED_STATUSES: readonly Status[] = ["signed", "hard_decline", "closed", "skipped"];
@@ -89,7 +91,9 @@ export interface Touch {
   contact_id: string;
   direction: Direction;
   channel: Channel;
-  sent_at: string;
+  status: TouchStatus;
+  created_by: string;
+  sent_at: string | null;
   subject: string | null;
   hook: string | null;
   body: string | null;
@@ -97,6 +101,20 @@ export interface Touch {
 }
 
 export type ContactWithCompany = Contact & { company: Pick<Company, "id" | "name" | "domain"> | null };
+export type ContactRow = ContactWithCompany & { touches: Touch[] };
+
+/** Latest outbound state per channel, derived from touches: a sent touch wins over a draft. */
+export function channelStates(touches: Touch[]): { channel: Channel; status: TouchStatus; at: string | null; drafts: number }[] {
+  const out = new Map<Channel, { channel: Channel; status: TouchStatus; at: string | null; drafts: number }>();
+  for (const t of touches) {
+    if (t.direction !== "outbound") continue;
+    const cur = out.get(t.channel) ?? { channel: t.channel, status: "drafted" as TouchStatus, at: null, drafts: 0 };
+    if (t.status === "drafted") cur.drafts += 1;
+    if (t.status === "sent" && (!cur.at || (t.sent_at && t.sent_at > cur.at))) { cur.status = "sent"; cur.at = t.sent_at; }
+    out.set(t.channel, cur);
+  }
+  return [...out.values()];
+}
 
 export interface ContactDetail {
   contact: Contact;

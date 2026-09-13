@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { db } from "@/lib/supabase";
 import { AUTH_COOKIE, sessionToken } from "@/lib/auth";
-import { CHANNELS, DIRECTIONS, SOURCES, STATUSES, TYPES } from "@/lib/types";
+import { CHANNELS, DIRECTIONS, SOURCES, STATUSES, TOUCH_STATUSES, TYPES } from "@/lib/types";
 
 export type ActionState = { error?: string; ok?: boolean } | undefined;
 
@@ -115,8 +115,9 @@ export async function logTouch(_prev: ActionState, fd: FormData): Promise<Action
   const direction = oneOf(str(fd, "direction"), DIRECTIONS);
   const channel = oneOf(str(fd, "channel"), CHANNELS);
   if (!contact_id || !direction || !channel) return { error: "Direction and channel are required." };
+  const status = oneOf(str(fd, "status"), TOUCH_STATUSES) ?? "drafted";
   const sentRaw = str(fd, "sent_at");
-  const sent_at = sentRaw ? new Date(sentRaw).toISOString() : new Date().toISOString();
+  const sent_at = status === "sent" || direction === "inbound" ? (sentRaw ? new Date(sentRaw).toISOString() : new Date().toISOString()) : null;
   const supabase = await db();
   const { error } = await supabase.rpc("log_touch", {
     p_contact_id: contact_id,
@@ -126,6 +127,8 @@ export async function logTouch(_prev: ActionState, fd: FormData): Promise<Action
     p_subject: str(fd, "subject"),
     p_hook: str(fd, "hook"),
     p_body: str(fd, "body"),
+    p_status: status,
+    p_created_by: str(fd, "created_by") ?? "jeel",
   });
   if (error) return { error: error.message };
 
@@ -148,6 +151,23 @@ export async function setStatus(_prev: ActionState, fd: FormData): Promise<Actio
   const { error } = await supabase.rpc("set_contact_status", { p_contact_id: contact_id, p_status: status, p_note: str(fd, "note") });
   if (error) return { error: error.message };
   revalidatePath(`/contacts/${contact_id}`);
+  revalidatePath("/");
+  return { ok: true };
+}
+
+export async function markSent(_prev: ActionState, fd: FormData): Promise<ActionState> {
+  const touch_id = str(fd, "touch_id");
+  const contact_id = str(fd, "contact_id");
+  if (!touch_id) return { error: "Missing touch id." };
+  const sentRaw = str(fd, "sent_at");
+  const supabase = await db();
+  const { error } = await supabase.rpc("mark_sent", {
+    p_touch_id: touch_id,
+    p_sent_at: sentRaw ? new Date(sentRaw).toISOString() : new Date().toISOString(),
+  });
+  if (error) return { error: error.message };
+  if (contact_id) revalidatePath(`/contacts/${contact_id}`);
+  revalidatePath("/contacts");
   revalidatePath("/");
   return { ok: true };
 }
