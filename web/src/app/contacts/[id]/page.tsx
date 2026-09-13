@@ -65,7 +65,7 @@ export default async function ContactPage({ params }: { params: Promise<{ id: st
                       <span className={`font-medium ${t.direction === "inbound" ? "text-violet-800" : "text-zinc-800"}`}>{t.direction === "inbound" ? "← They wrote" : "→ Outbound"}</span>
                       <ChannelTag channel={t.channel} />
                       {t.direction === "outbound" && <TouchStatusBadge status={t.status} />}
-                      <span>{t.status === "sent" ? `sent ${fmtDateTime(t.sent_at)}` : `drafted ${fmtDateTime(t.created_at)}`}</span>
+                      <span>{t.status === "sent" ? fmtDateTime(t.sent_at) : `drafted ${fmtDateTime(t.created_at)}`}</span>
                       <span className="text-zinc-400">by {t.created_by}</span>
                       {t.status === "drafted" && <span className="ml-auto"><MarkSentButton touch={t} small /></span>}
                     </div>

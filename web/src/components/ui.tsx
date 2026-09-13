@@ -22,13 +22,12 @@ export function StatusBadge({ status }: { status: Status }) {
   );
 }
 
-const CHANNEL_ICON: Record<Channel, string> = { email: "✉", linkedin: "in", call: "☎", meeting: "▣" };
+const CHANNEL_NAME: Record<Channel, string> = { email: "Email", linkedin: "LinkedIn", call: "Call", meeting: "Meeting" };
 
 export function ChannelTag({ channel }: { channel: Channel }) {
   return (
-    <span className="inline-flex items-center gap-1 rounded bg-zinc-100 px-1.5 py-0.5 font-mono text-[11px] text-zinc-700">
-      <span aria-hidden>{CHANNEL_ICON[channel]}</span>
-      {channel}
+    <span className="inline-flex items-center rounded bg-zinc-100 px-1.5 py-0.5 text-[11px] font-medium text-zinc-700">
+      {CHANNEL_NAME[channel]}
     </span>
   );
 }
