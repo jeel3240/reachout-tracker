@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { deleteContact } from "@/app/actions";
 import { ContactForm, MarkSentButton, StatusForm, TouchForm } from "@/components/forms";
+import { QuickMarks } from "@/components/QuickMarks";
 import { Card, ChannelTag, Flag, StatusBadge, TouchStatusBadge, fmtDate, fmtDateTime } from "@/components/ui";
 import { getContactDetail, listCompanyOptions } from "@/lib/queries";
 import { STATUS_HINT, fullName } from "@/lib/types";
@@ -29,6 +30,7 @@ export default async function ContactPage({ params }: { params: Promise<{ id: st
             <Flag on={c.best_fit} label="best fit" />
             <Flag on={c.asu_tie} label="ASU tie" />
           </div>
+          <div className="mt-2"><QuickMarks contactId={c.id} touches={touches} /></div>
         </div>
         <dl className="grid grid-cols-2 gap-x-6 gap-y-1 text-xs text-zinc-600 sm:grid-cols-3">
           <dt>Requested</dt><dd className="font-medium text-zinc-800">{fmtDate(c.date_requested) || "—"}</dd>

@@ -172,6 +172,51 @@ export async function markSent(_prev: ActionState, fd: FormData): Promise<Action
   return { ok: true };
 }
 
+/**
+ * One-click "I sent it" for a channel. If a draft exists for that channel, mark the newest one
+ * sent. Otherwise log a sent touch now. Returns nothing fancy; the row re-renders.
+ */
+export async function quickMarkSent(_prev: ActionState, fd: FormData): Promise<ActionState> {
+  const contact_id = str(fd, "contact_id");
+  const channel = oneOf(str(fd, "channel"), CHANNELS);
+  if (!contact_id || !channel) return { error: "Missing contact or channel." };
+  const supabase = await db();
+  const now = new Date().toISOString();
+  const { data: draft } = await supabase
+    .from("touches")
+    .select("id")
+    .eq("contact_id", contact_id)
+    .eq("channel", channel)
+    .eq("direction", "outbound")
+    .eq("status", "drafted")
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  const { error } = draft
+    ? await supabase.rpc("mark_sent", { p_touch_id: draft.id, p_sent_at: now })
+    : await supabase.rpc("log_touch", {
+        p_contact_id: contact_id,
+        p_direction: "outbound",
+        p_channel: channel,
+        p_sent_at: now,
+        p_subject: null,
+        p_hook: null,
+        p_body: null,
+        p_status: "sent",
+        p_created_by: str(fd, "created_by") ?? "jeel",
+      });
+  if (error) return { error: error.message };
+  // First outbound send moves accepted/requested -> messaged automatically.
+  const { data: c } = await supabase.from("contacts").select("status").eq("id", contact_id).single();
+  if (c && (c.status === "accepted" || c.status === "requested")) {
+    await supabase.rpc("set_contact_status", { p_contact_id: contact_id, p_status: "messaged", p_note: null });
+  }
+  revalidatePath(`/contacts/${contact_id}`);
+  revalidatePath("/contacts");
+  revalidatePath("/");
+  return { ok: true };
+}
+
 export async function updateCompany(_prev: ActionState, fd: FormData): Promise<ActionState> {
   const id = str(fd, "id");
   const name = str(fd, "name");

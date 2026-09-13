@@ -2,38 +2,10 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { StatusBadge, Flag, TouchStatusBadge, ChannelTag, fmtDate, fmtDateTime, fmtShort, daysAgo } from "./ui";
+import { StatusBadge, Flag, TouchStatusBadge, ChannelTag, fmtDate, fmtDateTime, daysAgo } from "./ui";
 import { MarkSentButton } from "./forms";
-import { SOURCE_LABEL, channelStates, fullName, type ContactRow } from "@/lib/types";
-
-const CHANNEL_NAME: Record<string, string> = { email: "Email", linkedin: "LinkedIn", call: "Call", meeting: "Meeting" };
-
-function ChannelBadges({ row }: { row: ContactRow }) {
-  const states = channelStates(row.touches);
-  const inbound = row.touches.filter((t) => t.direction === "inbound").length;
-  if (!states.length && !inbound) return <span className="text-zinc-400">—</span>;
-  return (
-    <div className="flex flex-wrap gap-1">
-      {states.map((s) => (
-        <span
-          key={s.channel}
-          className={`rounded px-1.5 py-0.5 text-[11px] font-medium ring-1 ring-inset ${
-            s.status === "sent" ? "bg-emerald-50 text-emerald-800 ring-emerald-200" : "bg-amber-50 text-amber-800 ring-amber-200"
-          }`}
-          title={s.status === "sent" ? `${CHANNEL_NAME[s.channel]} sent ${fmtDateTime(s.at)}${s.drafts ? `, ${s.drafts} draft pending` : ""}` : `${CHANNEL_NAME[s.channel]} drafted, not sent`}
-        >
-          {CHANNEL_NAME[s.channel]} {s.status === "sent" ? `sent ${fmtShort(s.at)}` : "drafted"}
-          {s.status === "sent" && s.drafts > 0 && <span className="ml-1 text-amber-700">+{s.drafts} draft</span>}
-        </span>
-      ))}
-      {inbound > 0 && (
-        <span className="rounded bg-violet-50 px-1.5 py-0.5 text-[11px] font-medium text-violet-800 ring-1 ring-inset ring-violet-200">
-          {inbound} repl{inbound === 1 ? "y" : "ies"}
-        </span>
-      )}
-    </div>
-  );
-}
+import { QuickMarks } from "./QuickMarks";
+import { SOURCE_LABEL, fullName, type ContactRow } from "@/lib/types";
 
 function TouchList({ row }: { row: ContactRow }) {
   if (!row.touches.length) return <p className="text-sm text-zinc-500">No touches logged.</p>;
@@ -76,7 +48,7 @@ export function ContactTable({ contacts, showCompany = true }: { contacts: Conta
             <th className="py-2 pr-3 font-medium">Type</th>
             <th className="py-2 pr-3 font-medium">Source</th>
             <th className="py-2 pr-3 font-medium">Status</th>
-            <th className="py-2 pr-3 font-medium">Touches</th>
+            <th className="py-2 pr-3 font-medium">Sent</th>
             <th className="py-2 pr-3 font-medium">Last touch</th>
             <th className="py-2 pr-3 font-medium">Requested</th>
             <th className="py-2 font-medium">Flags</th>
@@ -112,7 +84,7 @@ export function ContactTable({ contacts, showCompany = true }: { contacts: Conta
                 <td className="py-2 pr-3 text-zinc-600">{c.type ?? <span className="text-zinc-400">—</span>}</td>
                 <td className="py-2 pr-3 text-zinc-600">{c.source ? SOURCE_LABEL[c.source] : <span className="text-zinc-400">—</span>}</td>
                 <td className="py-2 pr-3"><StatusBadge status={c.status} /></td>
-                <td className="py-2 pr-3"><ChannelBadges row={c} /></td>
+                <td className="py-2 pr-3"><QuickMarks contactId={c.id} touches={c.touches} /></td>
                 <td className="py-2 pr-3 text-zinc-600" title={c.last_touch_at ?? ""}>{daysAgo(c.last_touch_at) || <span className="text-zinc-400">never</span>}</td>
                 <td className="py-2 pr-3 text-zinc-600">{fmtDate(c.date_requested)}</td>
                 <td className="py-2">
