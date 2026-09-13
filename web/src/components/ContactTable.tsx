@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { StatusBadge, Flag, TouchStatusBadge, ChannelTag, fmtDate, fmtDateTime, daysAgo } from "./ui";
-import { MarkSentButton } from "./forms";
+import { TouchActions } from "./forms";
 import { QuickMarks } from "./QuickMarks";
 import { SOURCE_LABEL, fullName, type ContactRow } from "@/lib/types";
 
@@ -19,7 +19,7 @@ function TouchList({ row }: { row: ContactRow }) {
             {t.direction === "outbound" && <TouchStatusBadge status={t.status} />}
             <span>{t.status === "sent" ? fmtDateTime(t.sent_at) : `drafted ${fmtDateTime(t.created_at)}`}</span>
             <span className="text-zinc-400">by {t.created_by}</span>
-            {t.status === "drafted" && <span className="ml-auto"><MarkSentButton touch={t} small /></span>}
+            <TouchActions touch={t} />
           </div>
           {t.subject && <div className="mt-1 text-sm font-medium text-zinc-900">{t.subject}</div>}
           {t.hook && <div className="mt-1 text-xs text-zinc-600"><span className="font-medium">Hook:</span> {t.hook}</div>}

@@ -59,6 +59,8 @@ Tools:
 | `update_contact(contact_id, ...)` | Patch any field. `append_note` adds a dated line without replacing notes. |
 | `log_touch(contact_id, direction, channel, body, status?, created_by?, ...)` | Logs a message. Outbound defaults to `status='drafted'`: not counted until marked sent. Put the full text in `body`. Inbound is always `sent`. |
 | `mark_sent(touch_id, sent_at?)` | Flips a draft to `sent` with the real send time. This is what updates `last_touch_at` and `touch_count`. |
+| `unmark_sent(touch_id)` | Undo a wrong mark: back to `drafted`, no send time, contact counts recomputed. |
+| `delete_touch(touch_id)` | Permanently delete one touch (e.g. an accidental duplicate) and recompute the contact's counts. |
 | `get_pending_sends()` | Every drafted touch grouped by contact, oldest first, with channel, subject, body, who drafted it and when. The daily send list. |
 | `update_status(contact_id, status, note)` | Sets status. `soft_no` sets `recontact_after` to today + 6 months. |
 | `get_followups_due()` | `messaged`, last touch older than 7 days, outbound sends on fewer than 2 distinct days. |

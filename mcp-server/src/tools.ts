@@ -364,6 +364,51 @@ export function registerTools(server: McpServer): void {
   );
 
   // ---------------------------------------------------------------------------
+  // unmark_sent
+  // ---------------------------------------------------------------------------
+  server.registerTool(
+    "unmark_sent",
+    {
+      title: "Revert a sent touch to drafted",
+      description:
+        "Undo a wrong mark_sent: sets the touch back to status='drafted' with no send time, and recomputes " +
+        "the contact's touch_count and last_touch_at from the remaining sent touches. Not allowed on inbound " +
+        "touches (delete those instead).",
+      inputSchema: { touch_id: z.string().uuid() },
+    },
+    async ({ touch_id }) =>
+      run(async () => {
+        const { data, error } = await db().rpc("unmark_sent", { p_touch_id: touch_id });
+        if (error) fail(error, "unmark_sent");
+        const touch = data as { contact_id: string };
+        const detail = await contactDetail(touch.contact_id);
+        return json({ touch: data, contact: detail ? summarize(detail.contact, detail.company?.name) : null });
+      })
+  );
+
+  // ---------------------------------------------------------------------------
+  // delete_touch
+  // ---------------------------------------------------------------------------
+  server.registerTool(
+    "delete_touch",
+    {
+      title: "Delete a touch",
+      description:
+        "Permanently delete one touch (e.g. an accidental duplicate) and recompute the contact's touch_count " +
+        "and last_touch_at. Use search_contact first to confirm the touch_id; this cannot be undone.",
+      inputSchema: { touch_id: z.string().uuid() },
+    },
+    async ({ touch_id }) =>
+      run(async () => {
+        const { data, error } = await db().rpc("delete_touch", { p_touch_id: touch_id });
+        if (error) fail(error, "delete_touch");
+        const touch = data as { contact_id: string };
+        const detail = await contactDetail(touch.contact_id);
+        return json({ deleted: data, contact: detail ? summarize(detail.contact, detail.company?.name) : null });
+      })
+  );
+
+  // ---------------------------------------------------------------------------
   // get_pending_sends
   // ---------------------------------------------------------------------------
   server.registerTool(

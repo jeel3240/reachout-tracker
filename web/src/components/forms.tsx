@@ -2,7 +2,7 @@
 
 import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
-import { createContact, updateContact, logTouch, markSent, setStatus, updateCompany, login, type ActionState } from "@/app/actions";
+import { createContact, updateContact, logTouch, markSent, unmarkSent, deleteTouch, setStatus, updateCompany, login, type ActionState } from "@/app/actions";
 import { CHANNELS, SOURCES, SOURCE_LABEL, STATUSES, STATUS_HINT, STATUS_LABEL, TYPES, type Company, type Contact, type Touch } from "@/lib/types";
 import { inputCls, labelCls } from "./ui";
 
@@ -247,5 +247,49 @@ export function MarkSentButton({ touch, small = false }: { touch: Pick<Touch, "i
       <Submit>Mark sent</Submit>
       <Feedback state={state} />
     </form>
+  );
+}
+
+function SmallSubmit({ children, danger = false }: { children: React.ReactNode; danger?: boolean }) {
+  const { pending } = useFormStatus();
+  return (
+    <button
+      type="submit"
+      disabled={pending}
+      className={`rounded px-1.5 py-0.5 text-[11px] font-medium ring-1 ring-inset disabled:opacity-50 ${
+        danger ? "bg-white text-rose-700 ring-rose-200 hover:bg-rose-50" : "bg-white text-zinc-700 ring-zinc-300 hover:bg-zinc-50"
+      }`}
+    >
+      {pending ? "…" : children}
+    </button>
+  );
+}
+
+/** Per-touch controls: mark sent (drafts), revert to draft (sent outbound), delete (any). */
+export function TouchActions({ touch }: { touch: Pick<Touch, "id" | "contact_id" | "status" | "direction"> }) {
+  const [rv, revert] = useActionState(unmarkSent, undefined);
+  const [dl, del] = useActionState(deleteTouch, undefined);
+  const hidden = (
+    <>
+      <input type="hidden" name="touch_id" value={touch.id} />
+      <input type="hidden" name="contact_id" value={touch.contact_id} />
+    </>
+  );
+  return (
+    <span className="ml-auto inline-flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+      {touch.status === "drafted" && <MarkSentButton touch={touch} small />}
+      {touch.status === "sent" && touch.direction === "outbound" && (
+        <form action={revert} onSubmit={(e) => { if (!confirm("Revert this touch to a draft? It will stop counting as sent.")) e.preventDefault(); }}>
+          {hidden}
+          <SmallSubmit>Revert to draft</SmallSubmit>
+          {rv?.error && <span className="ml-1 text-[11px] text-rose-700">{rv.error}</span>}
+        </form>
+      )}
+      <form action={del} onSubmit={(e) => { if (!confirm("Delete this touch permanently?")) e.preventDefault(); }}>
+        {hidden}
+        <SmallSubmit danger>Delete</SmallSubmit>
+        {dl?.error && <span className="ml-1 text-[11px] text-rose-700">{dl.error}</span>}
+      </form>
+    </span>
   );
 }

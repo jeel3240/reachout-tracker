@@ -192,6 +192,20 @@ export async function quickMarkSent(_prev: ActionState, fd: FormData): Promise<A
     .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle();
+  if (!draft) {
+    // Never stack a second send on top of an existing one from the quick button.
+    // Follow-ups are logged deliberately through the touch form.
+    const { data: already } = await supabase
+      .from("touches")
+      .select("id")
+      .eq("contact_id", contact_id)
+      .eq("channel", channel)
+      .eq("direction", "outbound")
+      .eq("status", "sent")
+      .limit(1)
+      .maybeSingle();
+    if (already) return { error: `Already marked sent. Use "Log a touch" for a follow-up.` };
+  }
   const { error } = draft
     ? await supabase.rpc("mark_sent", { p_touch_id: draft.id, p_sent_at: now })
     : await supabase.rpc("log_touch", {
@@ -212,6 +226,32 @@ export async function quickMarkSent(_prev: ActionState, fd: FormData): Promise<A
     await supabase.rpc("set_contact_status", { p_contact_id: contact_id, p_status: "messaged", p_note: null });
   }
   revalidatePath(`/contacts/${contact_id}`);
+  revalidatePath("/contacts");
+  revalidatePath("/");
+  return { ok: true };
+}
+
+export async function unmarkSent(_prev: ActionState, fd: FormData): Promise<ActionState> {
+  const touch_id = str(fd, "touch_id");
+  const contact_id = str(fd, "contact_id");
+  if (!touch_id) return { error: "Missing touch id." };
+  const supabase = await db();
+  const { error } = await supabase.rpc("unmark_sent", { p_touch_id: touch_id });
+  if (error) return { error: error.message };
+  if (contact_id) revalidatePath(`/contacts/${contact_id}`);
+  revalidatePath("/contacts");
+  revalidatePath("/");
+  return { ok: true };
+}
+
+export async function deleteTouch(_prev: ActionState, fd: FormData): Promise<ActionState> {
+  const touch_id = str(fd, "touch_id");
+  const contact_id = str(fd, "contact_id");
+  if (!touch_id) return { error: "Missing touch id." };
+  const supabase = await db();
+  const { error } = await supabase.rpc("delete_touch", { p_touch_id: touch_id });
+  if (error) return { error: error.message };
+  if (contact_id) revalidatePath(`/contacts/${contact_id}`);
   revalidatePath("/contacts");
   revalidatePath("/");
   return { ok: true };

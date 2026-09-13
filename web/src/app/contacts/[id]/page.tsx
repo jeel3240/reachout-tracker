@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { deleteContact } from "@/app/actions";
-import { ContactForm, MarkSentButton, StatusForm, TouchForm } from "@/components/forms";
+import { ContactForm, StatusForm, TouchActions, TouchForm } from "@/components/forms";
 import { QuickMarks } from "@/components/QuickMarks";
 import { Card, ChannelTag, Flag, StatusBadge, TouchStatusBadge, fmtDate, fmtDateTime } from "@/components/ui";
 import { getContactDetail, listCompanyOptions } from "@/lib/queries";
@@ -69,7 +69,7 @@ export default async function ContactPage({ params }: { params: Promise<{ id: st
                       {t.direction === "outbound" && <TouchStatusBadge status={t.status} />}
                       <span>{t.status === "sent" ? fmtDateTime(t.sent_at) : `drafted ${fmtDateTime(t.created_at)}`}</span>
                       <span className="text-zinc-400">by {t.created_by}</span>
-                      {t.status === "drafted" && <span className="ml-auto"><MarkSentButton touch={t} small /></span>}
+                      <TouchActions touch={t} />
                     </div>
                     {t.subject && <div className="mt-1 text-sm font-medium text-zinc-900">{t.subject}</div>}
                     {t.hook && <div className="mt-1 text-xs text-zinc-600"><span className="font-medium">Hook:</span> {t.hook}</div>}

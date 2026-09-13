@@ -23,20 +23,26 @@ function Mark({ contactId, channel, touches }: { contactId: string; channel: "em
   const title = sent
     ? hasDraft
       ? `A ${LABEL[channel]} draft is waiting. Click to mark it sent.`
-      : `Already sent. Click to log another ${LABEL[channel]} send (follow-up).`
+      : `Already sent. Expand the row to revert or delete, or use "Log a touch" for a follow-up.`
     : hasDraft
       ? `Mark the ${LABEL[channel]} draft as sent now`
       : `Log that you sent a ${LABEL[channel]} message now`;
 
+  const inert = sent && !hasDraft;
+  if (inert) {
+    return (
+      <span
+        title={title}
+        className="inline-flex items-center gap-1 rounded bg-emerald-50 px-1.5 py-0.5 text-[11px] font-medium text-emerald-800 ring-1 ring-inset ring-emerald-300"
+      >
+        <span aria-hidden>☑</span>
+        {label}
+      </span>
+    );
+  }
+
   return (
-    <form
-      action={action}
-      onClick={(e) => e.stopPropagation()}
-      onSubmit={(e) => {
-        if (sent && !hasDraft && !confirm(`Log another ${LABEL[channel]} send to this contact?`)) e.preventDefault();
-      }}
-      className="inline-flex items-center"
-    >
+    <form action={action} onClick={(e) => e.stopPropagation()} className="inline-flex items-center">
       <input type="hidden" name="contact_id" value={contactId} />
       <input type="hidden" name="channel" value={channel} />
       <Button label={label} title={title} sent={sent} hasDraft={hasDraft} />
