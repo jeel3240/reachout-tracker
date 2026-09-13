@@ -18,7 +18,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" className="h-full antialiased">
       <body className="min-h-full flex flex-col">
         <header className="border-b border-zinc-200 bg-white">
-          <div className="mx-auto flex max-w-6xl items-center gap-6 px-4 py-3">
+          <div className="flex w-full items-center gap-6 px-6 py-3">
             <Link href="/" className="text-sm font-semibold tracking-tight text-zinc-900">Reachout Tracker</Link>
             <nav className="flex gap-4 text-sm text-zinc-600">
               {nav.map((n) => (
@@ -30,7 +30,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </div>
           </div>
         </header>
-        <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6">{children}</main>
+        <main className="w-full flex-1 px-6 py-6">{children}</main>
       </body>
     </html>
   );

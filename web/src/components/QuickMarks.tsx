@@ -33,7 +33,7 @@ function Mark({ contactId, channel, touches }: { contactId: string; channel: "em
     return (
       <span
         title={title}
-        className="inline-flex items-center gap-1 rounded bg-emerald-50 px-1.5 py-0.5 text-[11px] font-medium text-emerald-800 ring-1 ring-inset ring-emerald-300"
+        className="inline-flex items-center gap-1 whitespace-nowrap rounded bg-emerald-50 px-1.5 py-0.5 text-[11px] font-medium text-emerald-800 ring-1 ring-inset ring-emerald-300"
       >
         <span aria-hidden>☑</span>
         {label}
@@ -63,7 +63,7 @@ function Button({ label, title, sent, hasDraft }: { label: string; title: string
       type="submit"
       disabled={pending}
       title={title}
-      className={`inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] font-medium ring-1 ring-inset disabled:opacity-50 ${cls}`}
+      className={`inline-flex items-center gap-1 whitespace-nowrap rounded px-1.5 py-0.5 text-[11px] font-medium ring-1 ring-inset disabled:opacity-50 ${cls}`}
     >
       <span aria-hidden>{pending ? "…" : sent ? "☑" : "☐"}</span>
       {label}
@@ -76,7 +76,7 @@ export function QuickMarks({ contactId, touches }: { contactId: string; touches:
   const replies = touches.filter((t) => t.direction === "inbound").length;
   const other = channelStates(touches).filter((s) => s.channel === "call" || s.channel === "meeting");
   return (
-    <div className="flex flex-wrap items-center gap-1">
+    <div className="flex items-center gap-1">
       <Mark contactId={contactId} channel="email" touches={touches} />
       <Mark contactId={contactId} channel="linkedin" touches={touches} />
       {other.map((s) => (

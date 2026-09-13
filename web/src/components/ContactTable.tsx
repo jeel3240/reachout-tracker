@@ -25,7 +25,7 @@ function CopyEmail({ email, verified }: { email: string | null; verified: boolea
       type="button"
       onClick={copy}
       title={`${verified ? "Verified" : "Unverified"} · click to copy`}
-      className="inline-flex max-w-[220px] items-center gap-1 rounded px-1 py-0.5 text-left font-mono text-xs text-zinc-700 hover:bg-zinc-100"
+      className="inline-flex max-w-[260px] items-center gap-1 whitespace-nowrap rounded px-1 py-0.5 text-left font-mono text-xs text-zinc-700 hover:bg-zinc-100"
     >
       <span className="truncate">{email}</span>
       <span className={`shrink-0 text-[10px] ${copied ? "text-emerald-700" : "text-zinc-400"}`}>{copied ? "copied" : verified ? "✓" : "?"}</span>
@@ -56,7 +56,7 @@ function TouchList({ row }: { row: ContactRow }) {
     <ol className="space-y-2">
       {row.touches.map((t) => (
         <li key={t.id} className={`rounded-md border p-3 ${t.direction === "inbound" ? "border-violet-200 bg-violet-50/40" : "border-zinc-200 bg-white"}`}>
-          <div className="flex flex-wrap items-center gap-2 text-xs text-zinc-600">
+          <div className="flex flex-wrap items-center gap-2 whitespace-nowrap text-xs text-zinc-600">
             <span className={`font-medium ${t.direction === "inbound" ? "text-violet-800" : "text-zinc-800"}`}>{t.direction === "inbound" ? "← They wrote" : "→ Outbound"}</span>
             <ChannelTag channel={t.channel} />
             {t.direction === "outbound" && <TouchStatusBadge status={t.status} />}
@@ -83,7 +83,7 @@ export function ContactTable({ contacts, showCompany = true }: { contacts: Conta
   const cols = 10 + (showCompany ? 1 : 0);
   return (
     <div className="overflow-x-auto">
-      <table className="w-full text-sm">
+      <table className="w-full min-w-[1100px] text-sm">
         <thead>
           <tr className="border-b border-zinc-200 text-left text-xs uppercase tracking-wide text-zinc-500">
             <th className="py-2 pr-3 font-medium">Name</th>
@@ -108,12 +108,12 @@ export function ContactTable({ contacts, showCompany = true }: { contacts: Conta
                 onClick={() => setOpen(isOpen ? null : c.id)}
                 className={`cursor-pointer border-b border-zinc-100 hover:bg-zinc-50 ${isOpen ? "bg-zinc-50" : ""}`}
               >
-                <td className="py-2 pr-3">
+                <td className="min-w-[200px] py-2 pr-3">
                   <span className="mr-1 inline-block w-3 text-xs text-zinc-400">{isOpen ? "▾" : "▸"}</span>
                   <Link href={`/contacts/${c.id}`} onClick={(e) => e.stopPropagation()} className="font-medium text-zinc-900 hover:underline">
                     {fullName(c)}
                   </Link>
-                  {c.title && <div className="pl-4 text-xs text-zinc-500">{c.title}</div>}
+                  {c.title && <div className="max-w-[260px] truncate pl-4 text-xs text-zinc-500" title={c.title}>{c.title}</div>}
                 </td>
                 {showCompany && (
                   <td className="py-2 pr-3 text-zinc-700">
@@ -126,16 +126,16 @@ export function ContactTable({ contacts, showCompany = true }: { contacts: Conta
                     )}
                   </td>
                 )}
-                <td className="py-2 pr-3 text-zinc-600">{c.type ?? <span className="text-zinc-400">—</span>}</td>
-                <td className="py-2 pr-3 text-zinc-600">{c.source ? SOURCE_LABEL[c.source] : <span className="text-zinc-400">—</span>}</td>
+                <td className="whitespace-nowrap py-2 pr-3 text-zinc-600">{c.type ?? <span className="text-zinc-400">—</span>}</td>
+                <td className="whitespace-nowrap py-2 pr-3 text-zinc-600">{c.source ? SOURCE_LABEL[c.source] : <span className="text-zinc-400">—</span>}</td>
                 <td className="py-2 pr-3"><StatusBadge status={c.status} /></td>
                 <td className="py-2 pr-3"><CopyEmail email={c.email} verified={c.email_verified} /></td>
                 <td className="py-2 pr-3"><LinkedInLink url={c.linkedin_url} /></td>
-                <td className="py-2 pr-3"><QuickMarks contactId={c.id} touches={c.touches} /></td>
-                <td className="py-2 pr-3 text-zinc-600" title={c.last_touch_at ?? ""}>{daysAgo(c.last_touch_at) || <span className="text-zinc-400">never</span>}</td>
-                <td className="py-2 pr-3 text-zinc-600">{fmtDate(c.date_requested)}</td>
+                <td className="whitespace-nowrap py-2 pr-3"><QuickMarks contactId={c.id} touches={c.touches} /></td>
+                <td className="whitespace-nowrap py-2 pr-3 text-zinc-600" title={c.last_touch_at ?? ""}>{daysAgo(c.last_touch_at) || <span className="text-zinc-400">never</span>}</td>
+                <td className="whitespace-nowrap py-2 pr-3 text-zinc-600">{fmtDate(c.date_requested)}</td>
                 <td className="py-2">
-                  <div className="flex gap-1">
+                  <div className="flex gap-1 whitespace-nowrap">
                     <Flag on={c.best_fit} label="best fit" />
                     <Flag on={c.asu_tie} label="ASU" />
                     <Flag on={!!c.email} label="has email" />

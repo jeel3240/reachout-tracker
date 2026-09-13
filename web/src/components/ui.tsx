@@ -108,4 +108,6 @@ export function LinkButton({ href, children, primary = false }: { href: string; 
 
 export const inputCls =
   "block w-full rounded-md border border-zinc-300 bg-white px-2.5 py-1.5 text-sm text-zinc-900 shadow-sm placeholder:text-zinc-400 focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500";
+export const selectCls =
+  "rounded-md border border-zinc-300 bg-white px-2.5 py-1.5 text-sm text-zinc-900 shadow-sm focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500";
 export const labelCls = "block text-xs font-medium text-zinc-600 mb-1";

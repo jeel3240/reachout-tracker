@@ -1,5 +1,5 @@
 import { ContactTable } from "@/components/ContactTable";
-import { inputCls } from "@/components/ui";
+import { inputCls, selectCls } from "@/components/ui";
 import { listContactRows } from "@/lib/queries";
 import { SOURCES, SOURCE_LABEL, STATUSES, STATUS_LABEL, TYPES, type Status } from "@/lib/types";
 
@@ -16,19 +16,19 @@ export default async function ContactsPage({ searchParams }: { searchParams: Pro
 
   return (
     <div className="space-y-4">
-      <form className="flex flex-wrap items-end gap-2" method="get">
-        <div className="min-w-64 flex-1">
+      <form className="flex flex-wrap items-center gap-2" method="get">
+        <div className="min-w-72 max-w-xl flex-1">
           <input name="q" defaultValue={sp.q ?? ""} placeholder="Search name, email, LinkedIn, company…" className={inputCls} />
         </div>
-        <select name="status" defaultValue={status} className={`${inputCls} w-auto`}>
+        <select name="status" defaultValue={status} className={selectCls}>
           <option value="">Any status</option>
           {STATUSES.map((s) => <option key={s} value={s}>{STATUS_LABEL[s]}</option>)}
         </select>
-        <select name="type" defaultValue={type} className={`${inputCls} w-auto`}>
+        <select name="type" defaultValue={type} className={selectCls}>
           <option value="">Any type</option>
           {TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
         </select>
-        <select name="source" defaultValue={source} className={`${inputCls} w-auto`}>
+        <select name="source" defaultValue={source} className={selectCls}>
           <option value="">Any source</option>
           {SOURCES.map((sv) => <option key={sv} value={sv}>{SOURCE_LABEL[sv]}</option>)}
         </select>
