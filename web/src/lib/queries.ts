@@ -16,7 +16,20 @@ export async function listContacts(opts: {
   source?: string;
   bestFit?: boolean;
   includeClosed?: boolean;
+  sort?: "updated" | "last_touch" | "name" | "added";
 } = {}): Promise<ContactWithCompany[]> {
+  const rows = await listContactsUnsorted(opts);
+  const byName = (a: Contact, b: Contact) => `${a.first_name} ${a.last_name ?? ""}`.localeCompare(`${b.first_name} ${b.last_name ?? ""}`);
+  switch (opts.sort) {
+    case "name": return rows.sort(byName);
+    case "added": return rows.sort((a, b) => b.created_at.localeCompare(a.created_at));
+    // oldest touch first: who has gone longest without contact; never-touched last
+    case "last_touch": return rows.sort((a, b) => (a.last_touch_at ?? "9999").localeCompare(b.last_touch_at ?? "9999"));
+    default: return opts.q?.trim() ? rows : rows.sort((a, b) => b.updated_at.localeCompare(a.updated_at));
+  }
+}
+
+async function listContactsUnsorted(opts: Parameters<typeof listContacts>[0] = {}): Promise<ContactWithCompany[]> {
   const hideClosed = !opts.status && !opts.includeClosed;
   if (opts.q?.trim()) {
     const rows = check(await (await db()).rpc("search_contacts", { q: opts.q.trim(), max_results: 50 }), "search") as ContactDetail[];

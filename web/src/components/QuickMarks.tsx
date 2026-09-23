@@ -72,19 +72,19 @@ function Button({ label, title, sent, hasDraft }: { label: string; title: string
 }
 
 /** Two one-click marks: "I sent the email", "I sent the LinkedIn message". */
-export function QuickMarks({ contactId, touches }: { contactId: string; touches: Touch[] }) {
+export function QuickMarks({ contactId, touches, compact = false }: { contactId: string; touches: Touch[]; compact?: boolean }) {
   const replies = touches.filter((t) => t.direction === "inbound").length;
   const other = channelStates(touches).filter((s) => s.channel === "call" || s.channel === "meeting");
   return (
     <div className="flex items-center gap-1">
       <Mark contactId={contactId} channel="email" touches={touches} />
       <Mark contactId={contactId} channel="linkedin" touches={touches} />
-      {other.map((s) => (
+      {!compact && other.map((s) => (
         <span key={s.channel} className="rounded bg-zinc-100 px-1.5 py-0.5 text-[11px] text-zinc-700">
           {s.channel === "call" ? "Call" : "Meeting"} {s.status === "sent" ? fmtShort(s.at) : "planned"}
         </span>
       ))}
-      {replies > 0 && (
+      {!compact && replies > 0 && (
         <span className="rounded bg-violet-50 px-1.5 py-0.5 text-[11px] font-medium text-violet-800 ring-1 ring-inset ring-violet-200">
           {replies} repl{replies === 1 ? "y" : "ies"}
         </span>
