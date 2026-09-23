@@ -184,21 +184,17 @@ export function TouchForm({ contact }: { contact: Contact }) {
 export function StatusForm({ contact }: { contact: Contact }) {
   const [state, action] = useActionState(setStatus, undefined);
   return (
-    <form action={action} className="space-y-3">
+    <form action={action} className="space-y-2">
       <input type="hidden" name="contact_id" value={contact.id} />
-      <Field label="Status">
-        <select name="status" defaultValue={contact.status} className={inputCls}>
-          {STATUSES.map((s) => <option key={s} value={s}>{STATUS_LABEL[s]} — {STATUS_HINT[s]}</option>)}
-        </select>
-      </Field>
-      <Field label="Note (appended to notes with today's date)">
-        <input name="note" className={inputCls} />
-      </Field>
-      <p className="text-xs text-zinc-500">Soft no sets recontact-after to today + 6 months automatically. Hard decline is permanent.</p>
+      <select name="status" defaultValue={contact.status} className={inputCls}>
+        {STATUSES.map((s) => <option key={s} value={s}>{STATUS_LABEL[s]} — {STATUS_HINT[s]}</option>)}
+      </select>
+      <input name="note" placeholder="Note (optional, dated automatically)" className={inputCls} />
       <div className="flex items-center gap-3">
-        <Submit>Update status</Submit>
+        <Submit>Update</Submit>
         <Feedback state={state} />
       </div>
+      <p className="text-[11px] leading-snug text-zinc-400">Soft no sets recontact to +6 months. Hard decline is permanent.</p>
     </form>
   );
 }

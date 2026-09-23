@@ -148,7 +148,9 @@ export async function setStatus(_prev: ActionState, fd: FormData): Promise<Actio
   const status = oneOf(str(fd, "status"), STATUSES);
   if (!contact_id || !status) return { error: "Status is required." };
   const supabase = await db();
-  const { error } = await supabase.rpc("set_contact_status", { p_contact_id: contact_id, p_status: status, p_note: str(fd, "note") });
+  // The database stamps today's date on the note, so drop one the caller already typed.
+  const note = str(fd, "note")?.replace(/^\d{4}-\d{2}-\d{2}:\s*/, "") || null;
+  const { error } = await supabase.rpc("set_contact_status", { p_contact_id: contact_id, p_status: status, p_note: note });
   if (error) return { error: error.message };
   revalidatePath(`/contacts/${contact_id}`);
   revalidatePath("/");
@@ -254,6 +256,20 @@ export async function deleteTouch(_prev: ActionState, fd: FormData): Promise<Act
   if (contact_id) revalidatePath(`/contacts/${contact_id}`);
   revalidatePath("/contacts");
   revalidatePath("/");
+  return { ok: true };
+}
+
+/** Set a single contact field. Used by the "found in notes" suggestions. */
+export async function setContactField(_prev: ActionState, fd: FormData): Promise<ActionState> {
+  const contact_id = str(fd, "contact_id");
+  const field = oneOf(str(fd, "field"), ["email", "phone"] as const);
+  const value = str(fd, "value");
+  if (!contact_id || !field || !value) return { error: "Missing value." };
+  const supabase = await db();
+  const { error } = await supabase.from("contacts").update({ [field]: value }).eq("id", contact_id);
+  if (error) return { error: error.message };
+  revalidatePath(`/contacts/${contact_id}`);
+  revalidatePath("/contacts");
   return { ok: true };
 }
 

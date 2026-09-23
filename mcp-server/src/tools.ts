@@ -265,7 +265,8 @@ export function registerTools(server: McpServer): void {
           const { data: cur, error } = await db().from("contacts").select("notes").eq("id", contact_id).single();
           if (error) fail(error, "update_contact(read notes)");
           const stamp = new Date().toISOString().slice(0, 10);
-          update.notes = [cur?.notes, `${stamp}: ${append_note.trim()}`].filter(Boolean).join("\n");
+          const text = append_note.trim().replace(/^\d{4}-\d{2}-\d{2}:\s*/, "");
+        update.notes = [cur?.notes, `${stamp}: ${text}`].filter(Boolean).join("\n");
         }
         if (!Object.keys(update).length) return errorResult("No fields to update.");
         const { error } = await db().from("contacts").update(update).eq("id", contact_id);
@@ -457,7 +458,8 @@ export function registerTools(server: McpServer): void {
         const { data, error } = await db().rpc("set_contact_status", {
           p_contact_id: contact_id,
           p_status: status,
-          p_note: note ?? null,
+          // the database stamps today's date itself; drop one the caller already included
+          p_note: note ? note.replace(/^\d{4}-\d{2}-\d{2}:\s*/, "") : null,
         });
         if (error) fail(error, "set_contact_status");
         return json({ contact: data });
