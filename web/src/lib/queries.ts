@@ -103,3 +103,44 @@ export async function withTouches<T extends Contact>(contacts: T[]): Promise<(T 
 export async function listContactRows(opts: Parameters<typeof listContacts>[0] = {}): Promise<ContactRow[]> {
   return withTouches(await listContacts(opts));
 }
+
+export interface PendingGroup {
+  contact: { id: string; name: string; title: string | null; company: string | null; status: Status; email: string | null; linkedin_url: string | null };
+  touches: { touch_id: string; channel: Touch["channel"]; subject: string | null; hook: string | null; body: string | null; created_by: string; drafted_at: string }[];
+}
+
+export async function getPendingSends(): Promise<PendingGroup[]> {
+  return (check(await (await db()).rpc("pending_sends"), "pending_sends") as PendingGroup[]) ?? [];
+}
+
+export type ActivityItem = Touch & { contact: { id: string; first_name: string; last_name: string | null; company: { name: string } | null } | null };
+
+export async function getRecentActivity(limit = 12): Promise<ActivityItem[]> {
+  return check(
+    await (await db())
+      .from("touches")
+      .select("*, contact:contacts(id, first_name, last_name, company:companies(name))")
+      .eq("status", "sent")
+      .order("sent_at", { ascending: false })
+      .limit(limit),
+    "recentActivity"
+  ) as ActivityItem[];
+}
+
+/** Sends and replies over the last 7 days, plus overall reply rate by contact. */
+export async function getActivityStats() {
+  const rows = check(
+    await (await db()).from("touches").select("contact_id, direction, status, sent_at").eq("status", "sent"),
+    "activityStats"
+  ) as Pick<Touch, "contact_id" | "direction" | "status" | "sent_at">[];
+  const weekAgo = Date.now() - 7 * 86_400_000;
+  const recent = rows.filter((r) => r.sent_at && new Date(r.sent_at).getTime() >= weekAgo);
+  const reached = new Set(rows.filter((r) => r.direction === "outbound").map((r) => r.contact_id));
+  const replied = new Set(rows.filter((r) => r.direction === "inbound").map((r) => r.contact_id));
+  return {
+    sentThisWeek: recent.filter((r) => r.direction === "outbound").length,
+    repliesThisWeek: recent.filter((r) => r.direction === "inbound").length,
+    reached: reached.size,
+    replied: [...replied].filter((id) => reached.has(id)).length,
+  };
+}
